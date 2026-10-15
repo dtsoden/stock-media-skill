@@ -9,7 +9,7 @@ Find stock images and video for UI/UX designs and save them in web-ready formats
 run against both Pexels and Pixabay, so you compare two pools of candidates and
 pick the best one from either. Illustration and vector searches go to Pixabay
 alone. Video searches query both and save a compressed MP4 with a WebP
-poster frame. Pairs well with the frontend-design plugin.
+poster frame. Pairs well with a frontend design skill.
 
 ## Limits to know before searching
 
@@ -60,27 +60,28 @@ the command. Either works; doing neither fails the moment a name is not English.
 
 ## API keys
 
-Setup (see `SETUP.md` in https://github.com/dtsoden/stock-media-skill) stores
-the two keys and records where in `config.json` next to this file. If
-`config.json` is missing, the skill has not been set up: point the user to
-that setup and stop.
+Setup (`SETUP.md` in https://github.com/dtsoden/stock-media-skill) stores the
+two keys and records where in `~/.config/stock-media/config.json`. If that
+file is missing and `scripts/check_keys.py` fails, the skill has not been set
+up: point the user to that setup and stop.
 
 Never print a key, never write one into the project, never read a key file,
 and never ask the user to paste a key into the chat. Load keys with the helper
-in `scripts/`, which checks environment variables first and then the OS
-credential store. Write each search script to a scratch or temp directory
-(not the project) and start it like this:
+in this skill's `scripts/` folder, which checks environment variables first and
+then the OS credential store. Write each search script to a scratch or temp
+directory (not the project) and start it like this, with `SKILL_DIR` set to
+the absolute path of the folder that holds this SKILL.md:
 
 ```python
 import os, sys
-SKILL_DIR = os.path.expanduser('~/.claude/skills/stock-media')
+SKILL_DIR = '/absolute/path/to/stock-media'  # the folder holding this SKILL.md
 sys.path.insert(0, os.path.join(SKILL_DIR, 'scripts'))
 from stock_media_keys import get_key
 PEXELS_KEY = get_key('pexels')
 PIXABAY_KEY = get_key('pixabay')
 ```
 
-How to run the script depends on `config.json`'s `store` value:
+How to run the script depends on the `store` value in the config file:
 
 - `keyring` or `env`: run it normally, `python search.py`.
 - `aihsm`: inject the keys with the vault names from `aihsm_names`:
@@ -88,9 +89,9 @@ How to run the script depends on `config.json`'s `store` value:
   Run python directly as the injected command. Wrapping it in `bash -c '...'`
   loses the variables.
 
-If the skill is installed somewhere other than `~/.claude/skills/stock-media`,
-adjust `SKILL_DIR`. `python scripts/check_keys.py` (through aihsm if that is
-the store) confirms both keys work without printing them.
+`python scripts/check_keys.py` (through aihsm if that is the store) confirms
+both keys work without printing them. If your sandbox blocks network access
+or the OS credential store, ask the user to allow it for these scripts.
 
 The Pixabay key travels in the query string, so never print or log a Pixabay
 search URL. Image and video URLs from either service are safe to print.
@@ -107,7 +108,7 @@ UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 
 ```
 
 ## Arguments
-$ARGUMENTS describes what images are needed and how they'll be used. This can be:
+The request describes what images are needed and how they'll be used. This can be:
 - A natural language description of images needed (e.g. "hero background for a fintech app", "team photos for about page", "product showcase images")
 - A specific search query
 - A design context where you determine what images would enhance the UI/UX
@@ -128,7 +129,7 @@ import sys, os, json, urllib.request, urllib.parse
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-SKILL_DIR = os.path.expanduser('~/.claude/skills/stock-media')
+SKILL_DIR = '/absolute/path/to/stock-media'  # the folder holding this SKILL.md
 sys.path.insert(0, os.path.join(SKILL_DIR, 'scripts'))
 from stock_media_keys import get_key
 PEXELS_KEY = get_key('pexels')

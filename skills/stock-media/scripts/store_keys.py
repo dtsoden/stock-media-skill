@@ -115,6 +115,7 @@ def write_config(store, aihsm_names=None):
     config = {'store': store}
     if aihsm_names:
         config['aihsm_names'] = aihsm_names
+    os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
     with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2)
 
