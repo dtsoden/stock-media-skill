@@ -1,4 +1,7 @@
-# stock-media
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png">
+  <img src="assets/logo.png" alt="stock-media" width="420">
+</picture>
 
 An Agent Skill that finds free stock photos and video for your web project and saves them ready to use. It searches Pexels and Pixabay together and picks the best match from either. It works with Claude Code, Codex, Gemini CLI, Cursor, GitHub Copilot, and any other AI tool that supports the [Agent Skills](https://agentskills.io) standard.
 
@@ -17,6 +20,8 @@ When it's finished, start a new session and ask for what you need:
 - "I need a friendly illustration for the empty state on this screen"
 
 Photos and video come from both services. Illustrations, vector art and animations come from Pixabay alone, since Pexels only has photos and live footage. Images are resized and saved as WebP. Videos are trimmed, compressed to MP4 with the sound removed, and saved with a poster image, ready for a muted background loop.
+
+For a longer walkthrough, read [the stock-media playbook](docs/stock-media-playbook.pdf). It lays out the problem the skill solves and what good results look like, then gives ten plays for websites, decks and documents, each with prompts you can copy word for word.
 
 The skill knows the limits of the free API keys and tells you when one affected its pick. The main ones: Pixabay images top out at 1280px wide, so full-width hero images come from Pexels, and Pixabay vector art downloads as PNG rather than SVG.
 
