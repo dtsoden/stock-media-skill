@@ -563,11 +563,11 @@ smaller in the tests behind the JPEG XL playbook in this skill's repository
 2026. Microsoft Edge does not, and neither do PowerPoint, Word or Google
 Slides.
 
-JPEG XL is never the default. Make JPEG XL files only when the user asks for
-them, or when you ask first and the user says yes. Asking makes sense when
-the project already serves `.jxl` images or the user is working on page
-weight. Don't ask on every request, and never make JXL for a deck or document.
-When the user wants it:
+JPEG XL is never the default. Make JPEG XL files when the user asks for them,
+or when the project already serves `.jxl` images. You can also ask first when
+it would help, for example when the user is working on page weight or the page
+is photo-heavy, and go ahead only if the user says yes. Don't ask on every
+request, and never make JXL for a deck or document. When it applies:
 
 1. Pass `jxl=True` to `download_and_optimize`. It writes the `.jxl` next to
    the WebP, never in place of it. cjxl's quality scale runs higher than
