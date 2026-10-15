@@ -23,6 +23,8 @@ Photos and video come from both services. Illustrations, vector art and animatio
 
 For a longer walkthrough, read [the stock-media playbook](docs/stock-media-playbook.pdf). It lays out the problem the skill solves and what good results look like, then gives ten plays for websites, decks and documents, each with prompts you can copy word for word.
 
+The skill can also save JPEG XL copies for web pages, but only when you ask for them, since Microsoft Edge and Office can't show the format yet. It needs the free `cjxl` tool from libjxl (`winget install libjxl.libjxl`, `brew install jpeg-xl` or `apt install libjxl-tools`). To see where the format saves space today and where to keep using JPEG, read [the JPEG XL playbook](docs/jxl-playbook.pdf).
+
 The skill knows the limits of the free API keys and tells you when one affected its pick. The main ones: Pixabay images top out at 1280px wide, so full-width hero images come from Pexels, and Pixabay vector art downloads as PNG rather than SVG.
 
 Pexels and Pixabay both allow free commercial use without attribution, under the [Pexels license](https://www.pexels.com/license/) and the [Pixabay content license](https://pixabay.com/service/license-summary/). Read those yourself before anything unusual, such as putting a stock image in a logo.

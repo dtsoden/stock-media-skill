@@ -253,7 +253,7 @@ going: WebP for web pages, JPEG or PNG for decks and documents (see
 from PIL import Image
 from io import BytesIO
 
-def download_and_optimize(photo, output_name, output_dir, max_width=1920, quality=75, fmt='webp'):
+def download_and_optimize(photo, output_name, output_dir, max_width=1920, quality=75, fmt='webp', jxl=False):
     """
     photo: one result dict from search_all / search_pexels / search_pixabay
     output_name: filename without extension
@@ -266,6 +266,8 @@ def download_and_optimize(photo, output_name, output_dir, max_width=1920, qualit
         - Decorative/barely-visible: 30-45
     fmt: 'webp' for web pages, 'jpeg' for photos in decks and documents,
          'png' for illustrations that need transparency in a deck or document
+    jxl: also write a JPEG XL copy next to the main file. Opt-in only, see
+         "JPEG XL (opt-in)" below. Never use it instead of the main file.
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -303,7 +305,27 @@ def download_and_optimize(photo, output_name, output_dir, max_width=1920, qualit
     print(f'{output_name}.{ext}: {img.width}x{img.height}, {new_size:,} bytes ({(1-new_size/orig_size)*100:.0f}% smaller)')
     print(f'  Source: {photo["source"]} {photo["page_url"]}')
     print(f'  By: {photo["author"]}')
+    if jxl:
+        make_jxl(img, os.path.join(output_dir, f'{output_name}.jxl'))
     return out_path
+
+
+def make_jxl(img, jxl_path, jxl_quality=90):
+    """Write a JPEG XL copy of a PIL image with cjxl from libjxl."""
+    import shutil, subprocess, tempfile
+    if not shutil.which('cjxl'):
+        print('  JPEG XL skipped: cjxl is not installed. Install libjxl with '
+              '`winget install libjxl.libjxl`, `brew install jpeg-xl` or '
+              '`apt install libjxl-tools`, then run this again.')
+        return None
+    # cjxl reads PNG, not WebP, so hand it the resized pixels as a lossless PNG
+    with tempfile.TemporaryDirectory() as tmp:
+        png = os.path.join(tmp, 'src.png')
+        img.save(png, 'PNG')
+        subprocess.run(['cjxl', png, jxl_path, '-q', str(jxl_quality), '--quiet'],
+                       check=True)
+    print(f'  {os.path.basename(jxl_path)}: {os.path.getsize(jxl_path):,} bytes')
+    return jxl_path
 ```
 
 Pixabay's `largeImageURL` links expire after about 24 hours and must not be
@@ -522,6 +544,37 @@ Video in a deck: PowerPoint and Keynote both play the MP4 that
 embedded video is usually the biggest thing in the file. Keep the sound only if
 the presenter will play it. The WebP poster is for web pages, so skip it for
 decks.
+
+## JPEG XL (opt-in)
+
+JPEG XL (`.jxl`) makes smaller files than WebP at the same quality, about 22%
+smaller in the tests behind the JPEG XL playbook in this skill's repository
+(`docs/jxl-playbook.pdf`). Chrome, Firefox and Safari show it as of October
+2026. Microsoft Edge does not, and neither do PowerPoint, Word or Google
+Slides.
+
+Only make JPEG XL files when the user asks for them, or when the project
+already serves `.jxl` images. Don't offer it on every request, and never for a
+deck or document. When it applies:
+
+1. Pass `jxl=True` to `download_and_optimize`. It writes the `.jxl` next to
+   the WebP, never in place of it, at `-q 90` (cjxl calls this visually
+   lossless). If `cjxl` is missing, it says how to install it and carries on
+   with the WebP alone.
+2. Serve the image with a fallback, so Edge and older browsers still get a
+   picture:
+
+```html
+<picture>
+  <source srcset="/images/hero.jxl" type="image/jxl">
+  <source srcset="/images/hero.webp" type="image/webp">
+  <img src="/images/hero.webp" alt="..." width="1920" height="1080">
+</picture>
+```
+
+3. Tell the user to check that their host sends `.jxl` files with the content
+   type `image/jxl`. If it doesn't, browsers skip the JXL source and fall back
+   to WebP, so nothing breaks, but nothing is saved either.
 
 ## API reference
 
