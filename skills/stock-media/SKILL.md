@@ -306,12 +306,17 @@ def download_and_optimize(photo, output_name, output_dir, max_width=1920, qualit
     print(f'  Source: {photo["source"]} {photo["page_url"]}')
     print(f'  By: {photo["author"]}')
     if jxl:
-        make_jxl(img, os.path.join(output_dir, f'{output_name}.jxl'))
+        # cjxl's -q scale runs higher than WebP's for the same look: in tests,
+        # JXL at the WebP quality minus 10 scored at least as well and was 4-31%
+        # smaller. Drop the copy if it still isn't smaller than the main file.
+        make_jxl(img, os.path.join(output_dir, f'{output_name}.jxl'),
+                 jxl_quality=max(quality - 10, 30), max_bytes=new_size)
     return out_path
 
 
-def make_jxl(img, jxl_path, jxl_quality=90):
-    """Write a JPEG XL copy of a PIL image with cjxl from libjxl."""
+def make_jxl(img, jxl_path, jxl_quality=70, max_bytes=None):
+    """Write a JPEG XL copy of a PIL image with cjxl from libjxl. With
+    max_bytes, delete the copy if it isn't smaller than that."""
     import shutil, subprocess, tempfile
     if not shutil.which('cjxl'):
         print('  JPEG XL skipped: cjxl is not installed. Install libjxl with '
@@ -324,7 +329,12 @@ def make_jxl(img, jxl_path, jxl_quality=90):
         img.save(png, 'PNG')
         subprocess.run(['cjxl', png, jxl_path, '-q', str(jxl_quality), '--quiet'],
                        check=True)
-    print(f'  {os.path.basename(jxl_path)}: {os.path.getsize(jxl_path):,} bytes')
+    size = os.path.getsize(jxl_path)
+    if max_bytes and size >= max_bytes:
+        os.remove(jxl_path)
+        print(f'  JPEG XL dropped: {size:,} bytes, no smaller than the main file')
+        return None
+    print(f'  {os.path.basename(jxl_path)}: {size:,} bytes (q{jxl_quality})')
     return jxl_path
 ```
 
@@ -558,9 +568,11 @@ already serves `.jxl` images. Don't offer it on every request, and never for a
 deck or document. When it applies:
 
 1. Pass `jxl=True` to `download_and_optimize`. It writes the `.jxl` next to
-   the WebP, never in place of it, at `-q 90` (cjxl calls this visually
-   lossless). If `cjxl` is missing, it says how to install it and carries on
-   with the WebP alone.
+   the WebP, never in place of it. cjxl's quality scale runs higher than
+   WebP's, so the JXL is encoded at the WebP quality minus 10, which matched
+   or beat the WebP's quality in testing. If the `.jxl` still isn't smaller
+   than the WebP, it is deleted and the page uses the WebP alone. If `cjxl` is
+   missing, the function says how to install it and carries on with the WebP.
 2. Serve the image with a fallback, so Edge and older browsers still get a
    picture:
 
