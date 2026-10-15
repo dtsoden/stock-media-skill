@@ -1,11 +1,12 @@
 ---
 name: stock-media
-description: Search Pexels and Pixabay together for stock photos and stock video, and Pixabay for illustrations, vector art and animations, pick the best match, then download and optimize it for a web project (WebP for images, compressed MP4 plus poster for video). Use for hero images, background videos, card thumbnails, illustrations, or any stock media a page needs.
+description: Search Pexels and Pixabay together for stock photos and stock video, and Pixabay for illustrations, vector art and animations, pick the best match, then download and optimize it for where it will be used (WebP for web pages, JPEG or PNG for PowerPoint, Keynote, Google Slides and Word documents, compressed MP4 plus poster for video). Use for hero images, background videos, card thumbnails, illustrations, slide photos, report covers, or any stock media a page, deck or document needs.
 ---
 
 # Stock media sourcing (Pexels + Pixabay)
 
-Find stock images and video for UI/UX designs and save them in web-ready formats. Photo searches
+Find stock images and video for web pages, decks and documents, and save them
+in the format and size that suits where they will be used. Photo searches
 run against both Pexels and Pixabay, so you compare two pools of candidates and
 pick the best one from either. Illustration and vector searches go to Pixabay
 alone. Video searches query both and save a compressed MP4 with a WebP
@@ -244,24 +245,27 @@ services together:
 `isLowQuality`.
 
 ### 3. Download & optimize
-Download the selected image and save it as optimized WebP. The same function
-handles either source:
+Download the selected image and save it in the format that suits where it is
+going: WebP for web pages, JPEG or PNG for decks and documents (see
+"Decks and documents" below). The same function handles either source:
 
 ```python
 from PIL import Image
 from io import BytesIO
 
-def download_and_optimize(photo, output_name, output_dir, max_width=1920, quality=75):
+def download_and_optimize(photo, output_name, output_dir, max_width=1920, quality=75, fmt='webp'):
     """
     photo: one result dict from search_all / search_pexels / search_pixabay
     output_name: filename without extension
     output_dir: where to save (e.g. public/images/)
     max_width: resize to this max width (keeps aspect ratio)
-    quality: WebP quality 1-100. Guidelines:
+    quality: WebP or JPEG quality 1-100 (ignored for PNG). Guidelines:
         - Hero/showcase images: 75-85
         - Card thumbnails: 65-75
         - Background/texture images: 40-55
         - Decorative/barely-visible: 30-45
+    fmt: 'webp' for web pages, 'jpeg' for photos in decks and documents,
+         'png' for illustrations that need transparency in a deck or document
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -279,15 +283,27 @@ def download_and_optimize(photo, output_name, output_dir, max_width=1920, qualit
         ratio = max_width / img.width
         img = img.resize((max_width, int(img.height * ratio)), Image.LANCZOS)
 
-    webp_path = os.path.join(output_dir, f'{output_name}.webp')
-    img.save(webp_path, 'WEBP', quality=quality, method=6)
+    ext = {'webp': 'webp', 'jpeg': 'jpg', 'png': 'png'}[fmt]
+    out_path = os.path.join(output_dir, f'{output_name}.{ext}')
+    if fmt == 'webp':
+        img.save(out_path, 'WEBP', quality=quality, method=6)
+    elif fmt == 'jpeg':
+        if img.mode in ('RGBA', 'LA', 'P'):
+            # JPEG has no transparency: flatten onto white
+            img = img.convert('RGBA')
+            bg = Image.new('RGB', img.size, (255, 255, 255))
+            bg.paste(img, mask=img.getchannel('A'))
+            img = bg
+        img.convert('RGB').save(out_path, 'JPEG', quality=quality, optimize=True, progressive=True)
+    else:
+        img.save(out_path, 'PNG', optimize=True)
 
     orig_size = len(img_data)
-    new_size = os.path.getsize(webp_path)
-    print(f'{output_name}.webp: {img.width}x{img.height}, {new_size:,} bytes ({(1-new_size/orig_size)*100:.0f}% smaller)')
+    new_size = os.path.getsize(out_path)
+    print(f'{output_name}.{ext}: {img.width}x{img.height}, {new_size:,} bytes ({(1-new_size/orig_size)*100:.0f}% smaller)')
     print(f'  Source: {photo["source"]} {photo["page_url"]}')
     print(f'  By: {photo["author"]}')
-    return webp_path
+    return out_path
 ```
 
 Pixabay's `largeImageURL` links expire after about 24 hours and must not be
@@ -465,6 +481,47 @@ set it.
 | Texture / pattern | 1200px | 50-65 | Repeating patterns stay crisp |
 | Product / showcase | 1200px | 80-90 | Quality matters, user inspects closely |
 | Decorative / accent | 600px | 50-60 | Small flourishes, low priority |
+
+## Decks and documents
+
+Slides and documents need different settings from web pages. Work out where
+the file is going from the request and the project (a `.pptx`, `.key` or
+`.docx` file, a deck build script, a report template) and pick settings from
+the table below. These are starting points, not rules. Adjust them to the
+real size the image fills on the slide or page, and say what you chose.
+
+Use JPEG for photos and PNG for illustrations that need a transparent
+background. WebP is safe on the web but not everywhere else: older versions of
+PowerPoint and Word can't insert it, and Keynote and Google Slides handling
+varies, so don't hand a deck or document a WebP file.
+
+Size each image for the space it fills, not for the biggest screen. A deck
+with twenty full-size photos gets heavy fast, so the aim is a sharp image on a
+projector or a 4K screen without carrying pixels nobody sees.
+
+| Use case | Max width | Format and quality | Notes |
+|----------|-----------|--------------------|-------|
+| Full-bleed slide photo | 1920px | JPEG 80-85 | Covers a 16:9 slide on a 1080p projector. Use 2560px only if the deck is shown on 4K screens. Pexels only. |
+| Half-slide photo | 1280px | JPEG 80 | Image beside text. Pixabay is fine here. |
+| Slide thumbnail or icon-sized photo | 640px | JPEG 75-80 | Grids of small photos, team slides |
+| Section-divider background | 1920px | JPEG 65-75 | Behind a dark overlay or large title, so compression won't show |
+| Illustration on a slide | 1280px | PNG | Keeps transparency. Pixabay vectors come as PNG anyway. |
+| Document cover or full-page image | 2000-2550px | JPEG 85 | About 300 ppi on a US Letter or A4 page if it will be printed. 1700px is enough if it is only read on screen. Pexels only. |
+| Image inside document text | 1400-1900px | JPEG 80-85 | Fits a 6.5 inch column at 200-300 ppi |
+| Diagram-style illustration in a document | 1600px | PNG | Sharp edges and flat color survive better as PNG |
+
+For a deck, keep every photo on the same aspect ratio as its frame and crop
+before you save. A photo cropped inside PowerPoint can keep its hidden pixels
+in the file. Run
+one search per deck where you can and pick images with the same light and
+palette, so the slides look like a set.
+
+Video in a deck: PowerPoint and Keynote both play the MP4 that
+`download_and_optimize_video` writes. Keep clips short (10-20 seconds) and use
+`max_width=1280` and `crf=28` unless the clip fills the whole slide, since an
+embedded video is usually the biggest thing in the file. Keep the sound only if
+the presenter will play it. The WebP poster is for web pages, so skip it for
+decks.
 
 ## API reference
 

@@ -19,7 +19,7 @@ When it's finished, start a new session and ask for what you need:
 - "Get a 10-second background video of ocean waves"
 - "I need a friendly illustration for the empty state on this screen"
 
-Photos and video come from both services. Illustrations, vector art and animations come from Pixabay alone, since Pexels only has photos and live footage. Images are resized and saved as WebP. Videos are trimmed, compressed to MP4 with the sound removed, and saved with a poster image, ready for a muted background loop.
+Photos and video come from both services. Illustrations, vector art and animations come from Pixabay alone, since Pexels only has photos and live footage. Images are resized for where they're going: WebP for web pages, JPEG or PNG for PowerPoint, Keynote, Google Slides and Word, so a deck or report doesn't balloon in size. Videos are trimmed, compressed to MP4 with the sound removed, and saved with a poster image, ready for a muted background loop.
 
 For a longer walkthrough, read [the stock-media playbook](docs/stock-media-playbook.pdf). It lays out the problem the skill solves and what good results look like, then gives ten plays for websites, decks and documents, each with prompts you can copy word for word.
 
