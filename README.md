@@ -1,31 +1,27 @@
 # stock-media skill
 
-A Claude Code skill that finds free stock photos and video for a web project, then saves them in web-ready formats. Photo and video searches run against Pexels and Pixabay together, so the agent compares two pools of candidates and picks the best one from either. Searches for illustrations, vectors or animations go to Pixabay alone, since Pexels has photos and live footage only.
+A Claude Code skill that finds free stock photos and video for your web project and saves them ready to use. It searches Pexels and Pixabay together and picks the best match from either.
 
-Images are resized and saved as WebP. Videos are trimmed, re-encoded to H.264 MP4 with the audio stripped, and saved with a WebP poster frame, ready for a muted background loop.
+Open Claude Code and paste this:
 
-The skill also tells the agent the limits of the free API tiers before it searches. Pixabay images top out at 1280px wide, Pixabay vectors download as PNG rather than SVG, and both services have rate limits. With that in front of it, the agent won't put a 1280px image in a full-width hero, and it says so when a limit shaped its pick.
-
-To install it, copy the `stock-media` folder into your Claude Code skills directory:
-
-```bash
-git clone https://github.com/dtsoden/stock-media-skill.git
-cp -r stock-media-skill/stock-media ~/.claude/skills/
+```
+Install the stock-media skill from https://github.com/dtsoden/stock-media-skill by following its SETUP.md.
 ```
 
-On Windows, the skills directory is `%USERPROFILE%\.claude\skills`. To use the skill in one project only, put the folder in that project's `.claude/skills/` instead.
+Claude does the rest. It installs the skill and walks you through getting two free API keys (one from Pexels, one from Pixabay). It asks where you want to keep them, opens a text file for you to paste them into, then stores them safely and deletes the file. Your keys never go into the chat.
 
-You need Python 3 with Pillow (`pip install Pillow`), plus ffmpeg on your PATH if you want video. You also need two free API keys, one from https://www.pexels.com/api/ and one from https://pixabay.com/api/docs/ (shown after you log in). Set them as environment variables:
+When it's finished, start a new Claude Code session and ask for what you need:
 
-```bash
-export PEXELS_API_KEY=...
-export PIXABAY_API_KEY=...
-```
+- "Find a hero photo for this landing page"
+- "Get a 10-second background video of ocean waves"
+- "I need a friendly illustration for the empty state on this screen"
 
-If you keep secrets in a vault or a secret manager, inject them at run time instead of exporting them. The skill shows how. It never prints the keys or writes them into your project.
+Photos come from both services. Illustrations, vector art and animations come from Pixabay alone, since Pexels only has photos and live footage. Images are resized and saved as WebP. Videos are trimmed, compressed to MP4 with the sound removed, and saved with a poster image, ready for a muted background loop.
 
-Then ask Claude Code for what you need, for example "find a hero image for this landing page" or "get a 10-second background video of ocean waves". You can also call the skill directly with `/stock-media`.
+The skill knows the limits of the free API keys and tells you when one affected its pick. The main ones: Pixabay images top out at 1280px wide, so full-width hero images come from Pexels, and Pixabay vector art downloads as PNG rather than SVG.
 
-Both services allow free commercial use without attribution, under the [Pexels license](https://www.pexels.com/license/) and the [Pixabay content license](https://pixabay.com/service/license-summary/). Check those terms yourself for anything unusual, such as using an image in a logo or trademark.
+Pexels and Pixabay both allow free commercial use without attribution, under the [Pexels license](https://www.pexels.com/license/) and the [Pixabay content license](https://pixabay.com/service/license-summary/). Read those yourself before anything unusual, such as putting a stock image in a logo.
 
 The skill itself is MIT licensed. See `LICENSE`.
+
+If you'd rather set it up by hand, copy the `stock-media` folder into `~/.claude/skills/` (on Windows, `%USERPROFILE%\.claude\skills\`). Install Python 3 with `pip install Pillow keyring`, plus ffmpeg if you want video. Then store your keys with `python ~/.claude/skills/stock-media/scripts/store_keys.py`. Run it with `--help` to see the options.

@@ -60,39 +60,40 @@ the command. Either works; doing neither fails the moment a name is not English.
 
 ## API keys
 
-The skill needs two free keys, read from environment variables:
+Setup (see `SETUP.md` in https://github.com/dtsoden/stock-media-skill) stores
+the two keys and records where in `config.json` next to this file. If
+`config.json` is missing, the skill has not been set up: point the user to
+that setup and stop.
 
-- `PEXELS_API_KEY` from https://www.pexels.com/api/
-- `PIXABAY_API_KEY` from https://pixabay.com/api/docs/ (shown once you log in)
-
-Never print either key, never write one into a file in the project, and never
-ask the user to paste one into the chat. Write the search script to a file
-(in a scratch or temp directory, not the project) and have it read the keys
-from the environment:
+Never print a key, never write one into the project, never read a key file,
+and never ask the user to paste a key into the chat. Load keys with the helper
+in `scripts/`, which checks environment variables first and then the OS
+credential store. Write each search script to a scratch or temp directory
+(not the project) and start it like this:
 
 ```python
-import os
-PEXELS_KEY = os.environ['PEXELS_API_KEY']
-PIXABAY_KEY = os.environ['PIXABAY_API_KEY']
+import os, sys
+SKILL_DIR = os.path.expanduser('~/.claude/skills/stock-media')
+sys.path.insert(0, os.path.join(SKILL_DIR, 'scripts'))
+from stock_media_keys import get_key
+PEXELS_KEY = get_key('pexels')
+PIXABAY_KEY = get_key('pixabay')
 ```
 
-If the keys live in a secret manager or OS vault instead of the shell
-environment, run the script through that tool's injector so the values never
-appear on a command line. For example, with the `aihsm` vault CLI and keys
-stored as `pexels` and `pixabay`:
+How to run the script depends on `config.json`'s `store` value:
 
-```bash
-aihsm run --set PEXELS_API_KEY=pexels --set PIXABAY_API_KEY=pixabay -- python search.py
-```
+- `keyring` or `env`: run it normally, `python search.py`.
+- `aihsm`: inject the keys with the vault names from `aihsm_names`:
+  `aihsm run --set PEXELS_API_KEY=<pexels name> --set PIXABAY_API_KEY=<pixabay name> -- python search.py`.
+  Run python directly as the injected command. Wrapping it in `bash -c '...'`
+  loses the variables.
 
-Run python directly as the injected command. Wrapping it in `bash -c '...'`
-can lose the injected variables. With a different secret manager, use its
-equivalent (`op run`, `doppler run`, and so on).
+If the skill is installed somewhere other than `~/.claude/skills/stock-media`,
+adjust `SKILL_DIR`. `python scripts/check_keys.py` (through aihsm if that is
+the store) confirms both keys work without printing them.
 
-If a key is missing, tell the user which environment variable to set and where
-to get the key. The Pixabay key travels in the query string, so never print or
-log a Pixabay search URL. Image and video URLs from either service are safe to
-print.
+The Pixabay key travels in the query string, so never print or log a Pixabay
+search URL. Image and video URLs from either service are safe to print.
 
 ## CRITICAL: send a browser User-Agent
 
@@ -127,8 +128,11 @@ import sys, os, json, urllib.request, urllib.parse
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-PEXELS_KEY = os.environ['PEXELS_API_KEY']
-PIXABAY_KEY = os.environ['PIXABAY_API_KEY']
+SKILL_DIR = os.path.expanduser('~/.claude/skills/stock-media')
+sys.path.insert(0, os.path.join(SKILL_DIR, 'scripts'))
+from stock_media_keys import get_key
+PEXELS_KEY = get_key('pexels')
+PIXABAY_KEY = get_key('pixabay')
 
 def _get(url, headers=None):
     req = urllib.request.Request(url, headers={'User-Agent': UA, **(headers or {})})
